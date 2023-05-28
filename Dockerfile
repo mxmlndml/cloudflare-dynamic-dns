@@ -1,30 +1,28 @@
 FROM node:alpine AS base
-
+# add pnpm
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
 
-FROM base as dependencies
-
+FROM base as deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+# install dependencies with pnpm
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm i --frozen-lockfile
 
 
-FROM base as build
-
+FROM base as builder
 WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-COPY --from=dependencies /app/node_modules ./node_modules
 RUN pnpm build
-RUN pnpm prune --prod
 
 
-FROM base as deploy
-
+FROM base as runner
 WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 
+USER node
 
-CMD ["node", "."]
+CMD ["node", "./dist/index.js"]
