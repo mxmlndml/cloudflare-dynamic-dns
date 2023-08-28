@@ -1,49 +1,55 @@
-import { getDnsRecord, patchDnsRecord } from "./cloudflare";
+import { getDnsRecords, patchDnsRecords } from "./cloudflare";
 import getPublicIp from "./getPublicIp";
 import * as log from "./log";
 
-const { ZONE_ID, DOMAIN_NAME, API_KEY, INTERVAL } = process.env;
+const { ZONE_ID, DOMAIN_NAMES, API_KEY, INTERVAL } = process.env;
 
 if (ZONE_ID === undefined) {
   log.error("could not access environment variable 'ZONE_ID'");
 }
-if (DOMAIN_NAME === undefined) {
-  log.error("could not access environment variable 'DOMAIN_NAME'");
+if (DOMAIN_NAMES === undefined) {
+  log.error("could not access environment variable 'DOMAIN_NAMES'");
 }
 if (API_KEY === undefined) {
   log.error("could not access environment variable 'API_KEY'");
 }
 if (
-  ZONE_ID === undefined || DOMAIN_NAME === undefined || API_KEY === undefined
+  ZONE_ID === undefined || DOMAIN_NAMES === undefined || API_KEY === undefined
 ) {
   process.exit(1);
 }
 
 const dynamicDns = async () => {
+  const domainNames = DOMAIN_NAMES.split(",");
   try {
-    const [publicIp, dnsRecord] = await Promise.all([
+    const [publicIp, dnsRecords] = await Promise.all([
       getPublicIp(),
-      getDnsRecord(ZONE_ID, DOMAIN_NAME, "A", API_KEY),
+      getDnsRecords(ZONE_ID, domainNames, "A", API_KEY),
     ]);
 
-    if (publicIp === dnsRecord.content) {
+    const dnsRecordsToPatch = dnsRecords.filter((dnsRecord) => {
+      dnsRecord.content !== publicIp;
+    });
+
+    if (dnsRecordsToPatch.length === 0) {
       log.info(`public ip address remained at '${publicIp}', no patch needed`);
       log.info(`checking again in ${INTERVAL} minutes\n`);
       return;
     }
 
     log.info(
-      `public ip address changed from '${dnsRecord.content}' to '${publicIp}'`,
+      `public ip address changed from '${
+        dnsRecordsToPatch[0].content
+      }' to '${publicIp}'`,
     );
-    await patchDnsRecord(
+    await patchDnsRecords(
+      dnsRecordsToPatch,
       ZONE_ID,
-      dnsRecord.id,
       API_KEY,
       publicIp,
-      DOMAIN_NAME,
       "A",
     );
-    log.info("patched dns entry");
+    log.info("patched dns entries");
     log.info(`checking again in ${INTERVAL} minutes\n`);
   } catch (error) {
     log.error((error as Error).message);

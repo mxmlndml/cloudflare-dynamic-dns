@@ -6,7 +6,7 @@ const STYLES = {
   ERROR: "\x1b[31m",
 };
 
-let LOG_LEVEL = process.env.LOG_LEVEL || "INFO";
+let LOG_LEVEL = process.env.LOG_LEVEL ?? "INFO";
 
 if (!["DEBUG", "INFO", "WARN", "ERROR"].includes(LOG_LEVEL)) {
   console.warn(

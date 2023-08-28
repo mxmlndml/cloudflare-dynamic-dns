@@ -5,6 +5,6 @@ services:
     environment:
       - API_KEY=123
       - ZONE_ID=023e105f4ecef8ad9ca31a8372d0c353
-      - DOMAIN_NAME=dyndns.example.com
+      - DOMAIN_NAMES=dyndns.example.com,example.com
       - INTERVAL=5
       - LOG_LEVEL=INFO

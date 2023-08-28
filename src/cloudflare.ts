@@ -17,7 +17,7 @@ const getDnsRecord = async (
   name: string,
   type: string,
   apiKey: string,
-): Promise<{ content: string; id: string }> => {
+): Promise<{ content: string; name: string; id: string }> => {
   const url =
     `https://api.cloudflare.com/client/v4/zones/${zoneIdentifier}/dns_records?name=${name}&type=${type}`;
   const headers = {
@@ -28,7 +28,7 @@ const getDnsRecord = async (
   const json: CFResponse = await response.json();
 
   if (json.success) {
-    return (({ content, id }) => ({ content, id }))(json.result[0]);
+    return (({ content, name, id }) => ({ content, name, id }))(json.result[0]);
   }
 
   const error = json.errors.reduce(
@@ -39,6 +39,16 @@ const getDnsRecord = async (
     `failed to get dns ${type.toLowerCase()} record '${name}'. ${error}`,
   );
 };
+
+const getDnsRecords = async (
+  zoneIdentifier: string,
+  names: string[],
+  type: string,
+  apiKey: string,
+): Promise<{ content: string; name: string; id: string }[]> =>
+  await Promise.all(
+    names.map(async (name) => getDnsRecord(zoneIdentifier, name, type, apiKey)),
+  );
 
 const patchDnsRecord = async (
   zoneIdentifier: string,
@@ -77,4 +87,22 @@ const patchDnsRecord = async (
   );
 };
 
-export { getDnsRecord, patchDnsRecord };
+const patchDnsRecords = async (
+  dnsRecords: { content: string; name: string; id: string }[],
+  zoneIdentifier: string,
+  apiKey: string,
+  content: string,
+  type: string,
+) =>
+  dnsRecords.forEach(async (dnsRecord) =>
+    await patchDnsRecord(
+      zoneIdentifier,
+      dnsRecord.id,
+      apiKey,
+      content,
+      dnsRecord.name,
+      type,
+    )
+  );
+
+export { getDnsRecord, getDnsRecords, patchDnsRecord, patchDnsRecords };
