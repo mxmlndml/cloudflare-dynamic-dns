@@ -4,8 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rimraf ./dist && tsc",
-    "start": "pnpm build && node ."
+    "start": "node .",
+    "dev": "tsc -w",
+    "build": "rimraf ./dist && tsc"
   },
   "keywords": [],
   "author": "",
