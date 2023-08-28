@@ -1,10 +1,10 @@
 services:
-  cloudflare-ddns:
-    image: cloudflare-ddns
+  cloudflare-dynamic-dns:
+    image: mxmlndml/cloudflare-dynamic-dns:latest
     restart: always
     environment:
-    - API_KEY=123
-    - ZONE_ID=023e105f4ecef8ad9ca31a8372d0c353
-    - DOMAIN_NAME=dyndns.example.com
-    - INTERVAL=5
-    - LOG_LEVEL=INFO
+      - API_KEY=123
+      - ZONE_ID=023e105f4ecef8ad9ca31a8372d0c353
+      - DOMAIN_NAME=dyndns.example.com
+      - INTERVAL=5
+      - LOG_LEVEL=INFO
