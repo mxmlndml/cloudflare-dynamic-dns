@@ -2,7 +2,8 @@ import { getDnsRecords, patchDnsRecords } from "./cloudflare";
 import getPublicIp from "./getPublicIp";
 import * as log from "./log";
 
-const { ZONE_ID, DOMAIN_NAMES, API_KEY, INTERVAL } = process.env;
+const { ZONE_ID, DOMAIN_NAMES, API_KEY } = process.env;
+const INTERVAL = process.env.INTERVAL ?? "5";
 
 if (ZONE_ID === undefined) {
   log.error("could not access environment variable 'ZONE_ID'");
@@ -27,9 +28,9 @@ const dynamicDns = async () => {
       getDnsRecords(ZONE_ID, domainNames, "A", API_KEY),
     ]);
 
-    const dnsRecordsToPatch = dnsRecords.filter((dnsRecord) => {
-      dnsRecord.content !== publicIp;
-    });
+    const dnsRecordsToPatch = dnsRecords.filter((dnsRecord) =>
+      dnsRecord.content !== publicIp
+    );
 
     if (dnsRecordsToPatch.length === 0) {
       log.info(`public ip address remained at '${publicIp}', no patch needed`);
@@ -60,5 +61,5 @@ const dynamicDns = async () => {
 dynamicDns();
 setInterval(
   dynamicDns,
-  Number.parseInt(INTERVAL === undefined ? "5" : INTERVAL) * 60 * 1000,
+  Number.parseInt(INTERVAL) * 60 * 1000,
 );
