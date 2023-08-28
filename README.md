@@ -1,5 +1,7 @@
 # Dynamic DNS Updates with Cloudflare
 
+![cloudflare-dynamic-dns](https://github.com/mxmlndml/cloudflare-dynamic-dns/assets/42516330/d1faa020-e730-4f53-9706-4fe9e9a7bd41)
+
 This Docker container offers a straightforward and efficient solution for
 automating dynamic DNS updates using the Cloudflare DNS service. It empowers you
 to effortlessly update your DNS records in Cloudflare at predefined intervals,
