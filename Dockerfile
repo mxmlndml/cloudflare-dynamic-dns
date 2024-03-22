@@ -1,18 +1,12 @@
-FROM node:slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="${PNPM_HOME}:${PATH}"
-RUN corepack enable
-COPY . /app
-WORKDIR /app
+FROM golang:1.22
 
-FROM base as prod-deps
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
+WORKDIR /usr/src/app
 
-FROM base AS build
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-RUN pnpm run build
+# pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-FROM base
-COPY --from=prod-deps /app/node_modules /app/node_modules
-COPY --from=build /app/dist /app/dist
-CMD [ "pnpm", "start" ]
+COPY . .
+RUN go build -v -o /usr/local/bin/app ./...
+
+CMD ["app"]
