@@ -8,39 +8,6 @@ import (
 	"net/http"
 )
 
-func setAuthHeader(req *http.Request, apiKey string) {
-	authHeader := fmt.Sprint("bearer ", apiKey)
-	req.Header.Add("Authorization", authHeader)
-}
-
-type cloudflareResponse struct {
-	Success bool
-	Result  []struct {
-		ID      string
-		Content string
-		Type    string
-	}
-	Errors []struct {
-		Message string
-	}
-}
-
-func checkServerErrors(data *cloudflareResponse) {
-	if data.Success {
-		return
-	}
-
-	msg := ""
-	for i, err := range data.Errors {
-		if i != 0 {
-			msg += ", "
-		}
-		msg += err.Message
-	}
-
-	log.Panic("Server responded with error: ", msg)
-}
-
 type dnsRecord struct {
 	id      string
 	content string
@@ -49,6 +16,11 @@ type DNSRecords struct {
 	name string
 	a    dnsRecord
 	aaaa dnsRecord
+}
+
+func setAuthHeader(req *http.Request, apiKey string) {
+	authHeader := fmt.Sprint("bearer ", apiKey)
+	req.Header.Add("Authorization", authHeader)
 }
 
 func GetDNSRecord(zoneID string, domainName string, apiKey string) DNSRecords {
@@ -71,12 +43,32 @@ func GetDNSRecord(zoneID string, domainName string, apiKey string) DNSRecords {
 
 	defer resp.Body.Close()
 
-	var data cloudflareResponse
+	var data struct {
+		Success bool
+		Errors  []struct {
+			Message string
+		}
+		Result []struct {
+			ID      string
+			Content string
+			Type    string
+		}
+	}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		log.Panic("Error parsing JSON: ", err)
 	}
-	checkServerErrors(&data)
+	if !data.Success {
+		msg := ""
+		for i, err := range data.Errors {
+			if i != 0 {
+				msg += ", "
+			}
+			msg += err.Message
+		}
+
+		log.Panic("Server responded with error: ", msg)
+	}
 
 	for _, record := range data.Result {
 		switch record.Type {
@@ -125,10 +117,25 @@ func UpdateDNSRecord(zoneID string, dnsRecordID string, apiKey string, body DNSR
 
 	defer resp.Body.Close()
 
-	var data cloudflareResponse
+	var data struct {
+		Success bool
+		Errors  []struct {
+			Message string
+		}
+	}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		log.Fatal("Error parsing JSON: ", err)
 	}
-	checkServerErrors(&data)
+
+	if !data.Success {
+		msg := ""
+		for i, err := range data.Errors {
+			if i != 0 {
+				msg += ", "
+			}
+			msg += err.Message
+		}
+		log.Panic("Server responded with error: ", msg)
+	}
 }

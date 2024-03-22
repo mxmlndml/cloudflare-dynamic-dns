@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -57,7 +59,32 @@ func getDNSRecords() []DNSRecords {
 	return dnsRecords
 }
 
+func initialize() {
+	fmt.Println("  _______             _______               ___                       _       ___  _  ______")
+	fmt.Println(" / ___/ /__  __ _____/ / _/ /__ ________   / _ \\__ _____  ___ ___ _  (_)___  / _ \\/ |/ / __/")
+	fmt.Println("/ /__/ / _ \\/ // / _  / _/ / _ `/ __/ -_) / // / // / _ \\/ _ `/  ' \\/ / __/ / // /    /\\ \\  ")
+	fmt.Println("\\___/_/\\___/\\_,_/\\_,_/_//_/\\_,_/_/  \\__/ /____/\\_, /_//_/\\_,_/_/_/_/_/\\__/ /____/_/|_/___/  ")
+	fmt.Println("                                              /___/                                         ")
+
+	var recordType string
+	if UseIPv4() && UseIPv6() {
+		recordType = "A and AAAA"
+	} else if UseIPv4() {
+		recordType = "A"
+	} else if UseIPv6() {
+		recordType = "AAAA"
+	}
+
+	domainNames := strings.Join(GetDomainNames(), ", ")
+
+	interval := GetInterval()
+
+	fmt.Printf("Updating %v records of %v every %v minutes\n\n", recordType, domainNames, interval)
+}
+
 func main() {
+	initialize()
+
 	for {
 		var publicIP publicIP
 		var dnsRecords []DNSRecords
@@ -84,7 +111,7 @@ func main() {
 
 				go func() {
 					UpdateDNSRecord(zoneID, dnsRecord.a.id, apiKey, DNSRecordBody{Type: "A", Name: dnsRecord.name, Content: publicIP.v4})
-					log.Printf("Set DNS record %v to %v", dnsRecord.name, publicIP.v4)
+					log.Printf("Set DNS A record %v to %v", dnsRecord.name, publicIP.v4)
 					wg.Done()
 				}()
 			}
@@ -93,7 +120,7 @@ func main() {
 
 				go func() {
 					UpdateDNSRecord(zoneID, dnsRecord.aaaa.id, apiKey, DNSRecordBody{Type: "AAAA", Name: dnsRecord.name, Content: publicIP.v6})
-					log.Printf("Set DNS record %v to %v", dnsRecord.name, publicIP.v6)
+					log.Printf("Set DNS AAAA record %v to %v", dnsRecord.name, publicIP.v6)
 					wg.Done()
 				}()
 			}
